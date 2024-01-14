@@ -22,16 +22,22 @@ let ball = new particle();
 for(let i=0; i<totalParticle; i++){
     ball.position = new vector2(Math.floor(Math.random() * (width)),
                             Math.floor(Math.random() * (height)));
-    ball.veloctity = new vector2(0,0);
+    ball.velocity = new vector2(0,0);
     ball.mass = 1;
 }
 
+let dtime = 1000/24;
 //runtime function
 function render(){    
     console.log(ball.position.x);
     console.log(ball.position.y);
     
-    
+    for(let i= 0; i<totalParticle; i++){
+      let xforce = 0;
+      let yforce = 9.81;  // m/s²
+      ball.velocity = new vector2(ball.velocity.x + (xforce/ball.mass)*dtime/1000,ball.velocity.y + (yforce/ball.mass)*dtime/1000);
+      ball.position = new vector2((dtime/1000)*ball.velocity.x+ball.position.x,(dtime/1000)*ball.velocity.y+ball.position.y);
+    }
     
     //rendring
     ctx.clearRect(0,0,width,height);
