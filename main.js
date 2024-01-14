@@ -33,7 +33,7 @@ function render(){
     console.log(ball.position.y);
     
     for(let i= 0; i<totalParticle; i++){
-      let xforce = 0;
+      let xforce = 1;
       let yforce = 9.81;  // m/s²
       ball.velocity = new vector2(ball.velocity.x + (xforce/ball.mass)*dtime/1000,ball.velocity.y + (yforce/ball.mass)*dtime/1000);
       ball.position = new vector2((dtime/1000)*ball.velocity.x+ball.position.x,(dtime/1000)*ball.velocity.y+ball.position.y);
