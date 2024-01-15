@@ -46,7 +46,9 @@ let dtime;
 
 let planet = new particle();
 planet.position = new vector2(width/2,height/2);
-planet.mass = 14e13;
+planet.mass = 14e16;
+
+const velCap = 200;
 //runtime function
 function render(){
     //delta time calculation
@@ -74,6 +76,16 @@ function render(){
         //velocity and position update
         ball[i].velocity = new vector2(ball[i].velocity.x + (xforce/ball[i].mass)*(dtime/1000),ball[i].velocity.y + (yforce/ball[i].mass)*(dtime/1000));
         ball[i].position = new vector2((dtime/1000)*ball[i].velocity.x+ball[i].position.x,(dtime/1000)*ball[i].velocity.y+ball[i].position.y);
+        
+        ball[i].velocity.x = Math.min(velCap,Math.max(ball[i].velocity.x,-velCap));
+        ball[i].velocity.y = Math.min(velCap,Math.max(ball[i].velocity.y,-velCap));
+        
+        //boundry wall
+        ball[i].position.x = Math.min(width,Math.max(ball[i].position.x,0));
+        ball[i].velocity.x = (ball[i].position.x==0 || ball[i].position.x==width)? 0:ball[i].velocity.x;
+        ball[i].position.y = Math.min(height,Math.max(ball[i].position.y,0));
+        ball[i].velocity.y = (ball[i].position.y==0 || ball[i].position.y==height)? 0:ball[i].velocity.y;
+        //console.log(ball[i].velocity.x);
     }
     
     //rendring
