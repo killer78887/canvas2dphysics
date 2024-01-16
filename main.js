@@ -5,10 +5,25 @@ const width = canvas.width;
 const height = canvas.height;
 const totalParticle = 100;
 const constG = 6.67428e-11   //m³kg-¹s-²
-const velCap = 200;
+const velCap = 110;
 const stifness = 5; //perfect bounce(1)->(increase) bounce less
-const trailLength = 9; 
+const trailLength = 6; 
+let planetUpdate = 0;
+const totalPlanet = 10;
+function velocityToColor(velocity, minVelocity, maxVelocity) {
+  // Normalize velocity to a value between 0 and 1
+    const normalizedVelocity = (velocity - minVelocity) / (maxVelocity - minVelocity);
 
+  // Interpolate between blue (low velocity) and red (high velocity)
+    const r = Math.floor(255 * normalizedVelocity);
+    const g = Math.floor(255 * (1-normalizedVelocity));
+    const b = Math.floor(255 * 0);
+
+  // Convert to hex
+    const hexColor = '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    //console.log(hexColor,velocity,normalizedVelocity);
+    return hexColor;
+}
 function vector2(x,y) {
     this.x = x || 0;
     this.y = y || 0 ;
@@ -50,7 +65,8 @@ function handleTouchStart(event) {
     event.preventDefault();
     var touchX = event.touches[0].clientX - canvas.getBoundingClientRect().left;
     var touchY = event.touches[0].clientY - canvas.getBoundingClientRect().top;
-    planet.position = new vector2(touchX,touchY);
+    planet[planetUpdate%totalPlanet].position = new vector2(touchX,touchY);
+    planetUpdate+=1;
     console.log("Touch Position: ", touchX, touchY);
 }
 canvas.addEventListener("touchstart", handleTouchStart, false);
@@ -60,10 +76,14 @@ let currentTime;
 let lastTime = Time.getTime();
 let dtime;
 
-let planet = new particle();
-planet.position = new vector2(width/2,height/2);
-planet.mass = 14e14;
+//planet
 
+let planet = new Array(totalPlanet);
+for(let i=0; i<totalPlanet; i++){
+    planet[i] = new particle();
+    planet[i].position = new vector2(Math.random()*width,Math.random()*height);
+    planet[i].mass = 20e14;
+}
 //runtime function
 function render(){
     //delta time calculation
@@ -74,27 +94,29 @@ function render(){
     
     //physics calculation
     for(let i= 0; i<totalParticle; i++){
-        
-        //force calculation
-        let delta = new vector2(planet.position.x-ball[i].position.x,planet.position.y-ball[i].position.y);
-        
-        let distance = Math.sqrt(Math.pow(delta.x, 2) + Math.pow(delta.y, 2));
-        
-        let smallg = (constG * planet.mass * ball[i].mass) / Math.pow(distance,2);
-        
-        let normal = new vector2(delta.x/distance,delta.y/distance);
-        
-        let xforce = normal.x*smallg;
-        let yforce = normal.y*smallg;
-        //console.log(xforce,yforce,delta.x,delta.y);
-        
-        //velocity and position update
-        ball[i].velocity = new vector2(ball[i].velocity.x + (xforce/ball[i].mass)*(dtime/1000),ball[i].velocity.y + (yforce/ball[i].mass)*(dtime/1000));
-        ball[i].position = new vector2((dtime/1000)*ball[i].velocity.x+ball[i].position.x,(dtime/1000)*ball[i].velocity.y+ball[i].position.y);
-        
-        //celocity cap
-        ball[i].velocity.x = Math.min(velCap,Math.max(ball[i].velocity.x,-velCap));
-        ball[i].velocity.y = Math.min(velCap,Math.max(ball[i].velocity.y,-velCap));
+        for(let j=0; j<totalPlanet; j++){
+            //force calculation
+            let delta = new vector2(planet[j].position.x-ball[i].position.x,planet[j].position.y-ball[i].position.y);
+            let distance = Math.sqrt(Math.pow(delta.x, 2) + Math.pow(delta.y, 2));
+            
+            let smallg = (constG * planet[j].mass * ball[i].mass) / Math.pow(distance,2);
+            
+            let normal = new vector2(delta.x/distance,delta.y/distance);
+            
+            let xforce = normal.x*smallg;
+            let yforce = normal.y*smallg;
+            //console.log(xforce,yforce,delta.x,delta.y);
+            
+            //velocity and position update
+            ball[i].velocity = new vector2(ball[i].velocity.x + (xforce/ball[i].mass)*(dtime/1000),ball[i].velocity.y + (yforce/ball[i].mass)*(dtime/1000));
+            
+              //velocity cap
+            ball[i].velocity.x = Math.min(velCap,Math.max(ball[i].velocity.x,-velCap));
+            ball[i].velocity.y = Math.min(velCap,Math.max(ball[i].velocity.y,-velCap))
+            
+            ball[i].position = new vector2((dtime/1000)*ball[i].velocity.x+ball[i].position.x,(dtime/1000)*ball[i].velocity.y+ball[i].position.y);
+            //console.log(delta);
+        }
         
         //boundry wall
         ball[i].position.x = Math.min(width,Math.max(ball[i].position.x,0));
@@ -106,23 +128,22 @@ function render(){
         if(ball[i].position.y<=0 || ball[i].position.y>=height){
             ball[i].velocity.y = (ball[i].velocity.y*-1)/stifness;
         }
-        //console.log(ball[i].velocity.x);
     }
     //rendring
     ctx.clearRect(0,0,width,height);
-    ctx.beginPath();
-    ctx.fillStyle = "green";
-    ctx.arc(planet.position.x,planet.position.y,6,0,2*Math.PI
-    );
-    ctx.fill();
+    for(let i=0; i<totalPlanet; i++){
+        ctx.beginPath();
+        ctx.fillStyle = "blue";
+        ctx.arc(planet[i].position.x,planet[i].position.y,6,0,2*Math.PI);
+        ctx.fill();
+    }
     
     for(let i=0; i<totalParticle; i++){
-        ctx.fillStyle = "red";
+        ctx.fillStyle = velocityToColor(Math.abs(Math.sqrt(Math.pow(ball[i].velocity.x,2)+Math.pow(ball[i].velocity.y,2))),0,velCap/2);
         ctx.beginPath();
         ctx.arc(ball[i].position.x,ball[i].position.y,3,0,2*Math.PI);
         ctx.fill();
         for(let j=0; j<trailLength; j++){
-            ctx.fillStyle = "#fff00"
             ctx.beginPath();
             ctx.arc(trailData[j][i].x,trailData[j][i].y,1,0,2*Math.PI);
             ctx.fill();
@@ -145,4 +166,3 @@ function render(){
 }
 //starts the animation
 requestAnimationFrame(render);
-
